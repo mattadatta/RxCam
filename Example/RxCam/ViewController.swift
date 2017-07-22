@@ -7,18 +7,24 @@
 //
 
 import UIKit
+import RxCam
 
-class ViewController: UIViewController {
+final class ViewController: UIViewController {
+
+    private let cameraPreviewController = CameraPreviewController()
+
+    private var camera: RxCamera {
+        return self.cameraPreviewController.camera
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-    }
 
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
+        let camera = self.camera
+        let cameraPreviewController = self.cameraPreviewController
 
+        camera.configure(with: RxCamera.ConfigOptions(includeAudio: false))
+        camera.chooseCamera(with: RxCamera.CameraSettings(deviceType: .builtInDualCamera10_2, devicePosition: .back))
+        self.addAndConstrain(cameraPreviewController)
+    }
 }
-

@@ -1,24 +1,25 @@
 PODS:
-  - FBSnapshotTestCase (2.1.4):
-    - FBSnapshotTestCase/SwiftSupport (= 2.1.4)
-  - FBSnapshotTestCase/Core (2.1.4)
-  - FBSnapshotTestCase/SwiftSupport (2.1.4):
-    - FBSnapshotTestCase/Core
-  - Nimble (5.1.1)
-  - Nimble-Snapshots (4.4.0):
-    - Nimble-Snapshots/Core (= 4.4.0)
-  - Nimble-Snapshots/Core (4.4.0):
-    - FBSnapshotTestCase (~> 2.0)
-    - Nimble
-    - Quick
-  - Quick (1.0.0)
-  - RxCam (0.1.0)
+  - Nimble (7.0.1)
+  - Quick (1.1.0)
+  - RxCam (0.1.0):
+    - RxCocoa (= 3.5.0)
+    - RxGesture (= 1.0.1)
+    - RxSwift (= 3.5.0)
+    - RxSwiftExt (= 2.5.1)
+  - RxCocoa (3.5.0):
+    - RxSwift (~> 3.4)
+  - RxGesture (1.0.1):
+    - RxCocoa (~> 3.4)
+    - RxSwift (~> 3.4)
+  - RxSwift (3.5.0)
+  - RxSwiftExt (2.5.1):
+    - RxSwiftExt/Core (= 2.5.1)
+  - RxSwiftExt/Core (2.5.1):
+    - RxSwift (~> 3.4)
 
 DEPENDENCIES:
-  - FBSnapshotTestCase
-  - Nimble (~> 5.1.1)
-  - Nimble-Snapshots
-  - Quick (~> 1.0.0)
+  - Nimble (~> 7.0.1)
+  - Quick (~> 1.1.0)
   - RxCam (from `../`)
 
 EXTERNAL SOURCES:
@@ -26,12 +27,14 @@ EXTERNAL SOURCES:
     :path: ../
 
 SPEC CHECKSUMS:
-  FBSnapshotTestCase: 094f9f314decbabe373b87cc339bea235a63e07a
-  Nimble: 415e3aa3267e7bc2c96b05fa814ddea7bb686a29
-  Nimble-Snapshots: e743439f26c2fa99d8f7e0d7c01c99bcb40aa6f2
-  Quick: 8024e4a47e6cc03a9d5245ef0948264fc6d27cff
-  RxCam: 0868ebad76e8baace0ab28dac243951e8713dbd1
+  Nimble: 657d000e11df8aebe27cdaf9d244de7f30ed87f7
+  Quick: dafc587e21eed9f4cab3249b9f9015b0b7a7f71d
+  RxCam: 509e42d6e31e52e6c4bc89b9e4d6896004e9d83f
+  RxCocoa: a0a09f45d0e5b48ecb6a4a7b4b4c89c88d3f633f
+  RxGesture: 1f770b247c69e8133fb8f4ef263571efd0ae91a1
+  RxSwift: 18ee9d78b45edb3b0b7e79916b47a116e6dbc842
+  RxSwiftExt: ec25c6df68d15ad6fe326792d60452b52e83d606
 
-PODFILE CHECKSUM: 6fd640d41274ca4b584db27b19ef8c8289f1df68
+PODFILE CHECKSUM: 4d32508bce239344d69d82ba9b264493682904e4
 
 COCOAPODS: 1.3.0.beta.2
