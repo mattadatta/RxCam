@@ -1,9 +1,6 @@
 //
-//  Utils.swift
-//  RxCam_Example
-//
-//  Created by Matthew Brown on 2017-07-22.
-//  Copyright © 2017 CocoaPods. All rights reserved.
+// This file is subject to the terms and conditions defined in
+// file 'LICENSE', which is part of this source code package.
 //
 
 import UIKit

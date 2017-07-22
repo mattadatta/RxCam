@@ -1,9 +1,6 @@
 //
-//  AppDelegate.swift
-//  RxCam
-//
-//  Created by Matthew Brown on 07/18/2017.
-//  Copyright (c) 2017 Matthew Brown. All rights reserved.
+// This file is subject to the terms and conditions defined in
+// file 'LICENSE', which is part of this source code package.
 //
 
 import UIKit

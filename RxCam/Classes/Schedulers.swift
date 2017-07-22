@@ -1,6 +1,6 @@
 //
 // This file is subject to the terms and conditions defined in
-// file 'LICENSE.txt', which is part of this source code package.
+// file 'LICENSE', which is part of this source code package.
 //
 
 import Foundation
@@ -23,11 +23,4 @@ struct Schedulers {
     static let main = MainScheduler.instance
 
     private init() { }
-}
-
-extension ObservableType {
-
-    func workSession() -> Observable<E> {
-        return self.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
-    }
 }

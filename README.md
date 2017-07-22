@@ -1,9 +1,6 @@
 # RxCam
 
-[![CI Status](http://img.shields.io/travis/Matthew Brown/RxCam.svg?style=flat)](https://travis-ci.org/Matthew Brown/RxCam)
-[![Version](https://img.shields.io/cocoapods/v/RxCam.svg?style=flat)](http://cocoapods.org/pods/RxCam)
-[![License](https://img.shields.io/cocoapods/l/RxCam.svg?style=flat)](http://cocoapods.org/pods/RxCam)
-[![Platform](https://img.shields.io/cocoapods/p/RxCam.svg?style=flat)](http://cocoapods.org/pods/RxCam)
+Reactive! Camera! Yeah!
 
 ## Example
 
