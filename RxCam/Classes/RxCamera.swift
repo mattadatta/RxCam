@@ -11,245 +11,7 @@ import RxCocoa
 import RxSwiftExt
 import RxGesture
 
-extension Reactive where Base: AVCaptureDevice {
-
-    func focus(with settings: RxCamera.FocusSettings) -> Single<RxCamera.FocusSettings> {
-        let device = self.base
-        return Single.create { single in
-            do {
-                try device.lockForConfiguration()
-                defer {
-                    device.unlockForConfiguration()
-                }
-
-                if let focusOptions = settings.focusOptions {
-                    if device.isFocusPointOfInterestSupported && device.isFocusModeSupported(focusOptions.focusMode) {
-                        device.focusMode = focusOptions.focusMode
-                        device.focusPointOfInterest = focusOptions.location
-                    }
-                }
-
-                if let exposureOptions = settings.exposureOptions {
-                    if device.isFocusPointOfInterestSupported && device.isExposureModeSupported(exposureOptions.exposureMode) {
-                        device.exposureMode = exposureOptions.exposureMode
-                        device.exposurePointOfInterest = exposureOptions.location
-                    }
-                }
-
-                if let monitorSubjectAreaChange = settings.monitorSubjectAreaChange {
-                    device.isSubjectAreaChangeMonitoringEnabled = monitorSubjectAreaChange
-                }
-
-                single(.success(settings))
-            } catch let error {
-                single(.error(error))
-            }
-
-            return Disposables.create()
-        }.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
-    }
-}
-
-extension Reactive where Base: AVCaptureSession {
-
-    func removeInput <Input: AVCaptureInput> (_ prevInput: Input?, andAttachInput nextInput: Input?) -> Single<Input?> {
-        let session = self.base
-        return Single.create { single in
-            session.beginConfiguration(); defer { session.commitConfiguration() }
-
-            let disposable = Disposables.create()
-
-            if let prevInput = prevInput {
-                session.removeInput(prevInput)
-            }
-
-            if let nextInput = nextInput {
-                if session.canAddInput(nextInput) {
-                    session.addInput(nextInput)
-                } else {
-                    single(.error(RxCamera.Error.unableToAddCaptureInput(nextInput)))
-                    return disposable
-                }
-            }
-
-            single(.success(nextInput))
-
-            return disposable
-        }.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
-    }
-
-    func removeOutput <Output: AVCaptureOutput> (_ prevOutput: Output?, andAttachOutput nextOutput: Output?) -> Single<Output?> {
-        let session = self.base
-        return Single.create { single in
-            session.beginConfiguration(); defer { session.commitConfiguration() }
-
-            let disposable = Disposables.create()
-
-            if let prevOutput = prevOutput {
-                session.removeOutput(prevOutput)
-            }
-
-            if let nextOutput = nextOutput {
-                if session.canAddOutput(nextOutput) {
-                    session.addOutput(nextOutput)
-                } else {
-                    single(.error(RxCamera.Error.unableToAddCaptureOutput(nextOutput)))
-                    return disposable
-                }
-            }
-
-            single(.success(nextOutput))
-
-            return disposable
-            }.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
-    }
-}
-
-private struct RxCameraUtils {
-
-    static func videoDeviceInput(from devices: Observable<[AVCaptureDevice]>, with settings: RxCamera.CameraSettings) -> Single<AVCaptureDeviceInput> {
-        return devices.take(1)
-            .asSingle()
-            .observeOn(Schedulers.session)
-            .map { devices in
-                let foundDevice =
-                    devices.filter({ $0.position == settings.devicePosition && $0.deviceType == settings.deviceType }).first ??
-                        devices.filter({ $0.position == settings.devicePosition }).first
-
-                guard let videoDevice = foundDevice else { throw RxCamera.Error.noCaptureDevicesAvailable(devices) }
-                let videoDeviceInput = try AVCaptureDeviceInput(device: videoDevice)
-                return videoDeviceInput
-            }
-            .observeOn(Schedulers.main)
-    }
-
-    static func audioDeviceInput() -> Single<AVCaptureDeviceInput> {
-        return Single.create { single in
-            let disposable = Disposables.create()
-            guard let audioDevice = AVCaptureDevice.defaultDevice(withMediaType: AVMediaTypeAudio) else {
-                single(.error(RxCamera.Error.noDeviceAvailableForMediaType(AVMediaTypeAudio)))
-                return disposable
-            }
-            do {
-                let audioDeviceInput = try AVCaptureDeviceInput(device: audioDevice)
-                single(.success(audioDeviceInput))
-            } catch let error {
-                single(.error(error))
-            }
-            return disposable
-        }.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
-    }
-
-    static func photoOutput() -> Single<AVCapturePhotoOutput> {
-        return Single.create { single in
-            let photoOutput = AVCapturePhotoOutput()
-            photoOutput.isHighResolutionCaptureEnabled = true
-            photoOutput.isLivePhotoCaptureEnabled = false
-            single(.success(photoOutput))
-            return Disposables.create()
-        }.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
-    }
-
-    private init() { }
-}
-
 public final class RxCamera {
-
-    public enum Error: Swift.Error {
-
-        case accessNotGranted
-        case noCaptureDevicesAvailable([AVCaptureDevice])
-        case noDeviceAvailableForMediaType(String)
-        case unableToAddCaptureInput(AVCaptureInput)
-        case unableToAddCaptureOutput(AVCaptureOutput)
-    }
-
-    public struct Config {
-
-        public var videoDeviceInput: AVCaptureDeviceInput?
-        public var audioDeviceInput: AVCaptureDeviceInput?
-        public var photoOutput: AVCapturePhotoOutput?
-
-        public init(videoDeviceInput: AVCaptureDeviceInput?, audioDeviceInput: AVCaptureDeviceInput?, photoOutput: AVCapturePhotoOutput?) {
-            self.videoDeviceInput = videoDeviceInput
-            self.audioDeviceInput = audioDeviceInput
-            self.photoOutput = photoOutput
-        }
-    }
-
-    public struct ConfigOptions {
-
-        public var includeAudio: Bool
-
-        public init(includeAudio: Bool) {
-            self.includeAudio = includeAudio
-        }
-    }
-
-    public struct FocusOptions {
-
-        public var focusMode: AVCaptureFocusMode
-        public var location: CGPoint
-
-        public init(focusMode: AVCaptureFocusMode, location: CGPoint) {
-            self.focusMode = focusMode
-            self.location = location
-            
-        }
-    }
-
-    public struct ExposureOptions {
-
-        public var exposureMode: AVCaptureExposureMode
-        public var location: CGPoint
-
-        public init(exposureMode: AVCaptureExposureMode, location: CGPoint) {
-            self.exposureMode = exposureMode
-            self.location = location
-        }
-    }
-
-    public struct FocusSettings {
-
-        public var focusOptions: FocusOptions?
-        public var exposureOptions: ExposureOptions?
-        public var monitorSubjectAreaChange: Bool?
-
-        public init(focusOptions: FocusOptions? = nil, exposureOptions: ExposureOptions? = nil, monitorSubjectAreaChange: Bool? = nil) {
-            self.focusOptions = focusOptions
-            self.exposureOptions = exposureOptions
-            self.monitorSubjectAreaChange = monitorSubjectAreaChange
-        }
-    }
-
-    public struct CameraSettings {
-
-        public var deviceType: AVCaptureDeviceType
-        public var devicePosition: AVCaptureDevicePosition
-
-        public init(deviceType: AVCaptureDeviceType, devicePosition: AVCaptureDevicePosition) {
-            self.deviceType = deviceType
-            self.devicePosition = devicePosition
-        }
-    }
-
-    public struct CapturePhotoSettings {
-
-        public var orientation: AVCaptureVideoOrientation
-
-        public init(orientation: AVCaptureVideoOrientation) {
-            self.orientation = orientation
-        }
-    }
-
-    public enum Status {
-
-        case available
-        case unavailable
-        case requiresManualResume
-    }
-
-
 
     public let session = AVCaptureSession()
 
@@ -354,17 +116,12 @@ public final class RxCamera {
             .merge()
             .map({ Result<Config>.error($0) })
 
-        let configResult = Observable
+        self.configResult = Observable
             .of(
                 config.map({ Result<Config>.element($0) }),
                 configErrors)
             .merge()
-
-        let configResultSubject = ReplaySubject<Result<Config>>.create(bufferSize: 1)
-        configResult
-            .bind(to: configResultSubject)
-            .disposed(by: self.disposeBag)
-        self.configResult = configResultSubject.observeOn(MainScheduler.instance)
+            .shareReplay(1)
 
         let lastReportedRunning = BehaviorSubject<Bool>(value: false)
 
@@ -385,7 +142,7 @@ public final class RxCamera {
             .bind(to: lastReportedRunning)
             .disposed(by: self.disposeBag)
 
-        let isRunning = Observable
+        self.isRunning = Observable
             .combineLatest(config, isActive, resultSelector: { $0 })
             .flatMapLatest { config, isActive -> Observable<Bool> in
                 guard isActive else { return .empty() }
@@ -393,13 +150,7 @@ public final class RxCamera {
                     .rx.observe(Bool.self, "running", options: [.initial, .new])
                     .unwrap()
             }
-            .share()
-
-        let isRunningSubject = ReplaySubject<Bool>.create(bufferSize: 1)
-        isRunning
-            .bind(to: isRunningSubject)
-            .disposed(by: self.disposeBag)
-        self.isRunning = isRunningSubject.observeOn(MainScheduler.instance)
+            .shareReplay(1)
 
         let sessionRuntimeError = Observable
             .combineLatest(config, isActive, resultSelector: { $0 })
@@ -486,15 +237,10 @@ public final class RxCamera {
         let statusAvailable = sessionInterruptionEnded
             .mapTo(Status.available)
 
-        let status = Observable
+        self.status = Observable
             .of(statusNeedsManualResume, statusUnavailable, statusAvailable)
             .merge()
-        let statusSubject = ReplaySubject<Status>.create(bufferSize: 1)
-        status
-            .bind(to: statusSubject)
-            .disposed(by: self.disposeBag)
-
-        self.status = statusSubject.observeOn(MainScheduler.instance)
+            .shareReplay(1)
 
         let subjectAreaDidChange = Observable
             .combineLatest(videoDeviceInputResult.optionalElements(), isActive, resultSelector: { $0 })
@@ -504,14 +250,7 @@ public final class RxCamera {
                     .rx.notification(.AVCaptureDeviceSubjectAreaDidChange, object: input.device)
                     .ping()
             }
-            .share()
-
-        let subjectAreaDidChangeSubject = ReplaySubject<Void>.create(bufferSize: 1)
-        subjectAreaDidChange
-            .bind(to: subjectAreaDidChangeSubject)
-            .disposed(by: self.disposeBag)
-
-        self.subjectAreaDidChange = subjectAreaDidChangeSubject.observeOn(MainScheduler.instance)
+            .shareReplay(1)
 
         subjectAreaDidChange
             .map {
@@ -522,6 +261,8 @@ public final class RxCamera {
             }
             .bind(to: self.focusSettings)
             .disposed(by: self.disposeBag)
+
+        self.subjectAreaDidChange = subjectAreaDidChange
 
         focusSettings
             .withLatestFrom(videoDeviceInputResult.optionalElements(), resultSelector: { $0 })
@@ -576,4 +317,243 @@ public final class RxCamera {
             }
             .observeOn(Schedulers.main)
     }
+}
+
+public extension RxCamera {
+
+    public enum Error: Swift.Error {
+
+        case accessNotGranted
+        case noCaptureDevicesAvailable([AVCaptureDevice])
+        case noDeviceAvailableForMediaType(String)
+        case unableToAddCaptureInput(AVCaptureInput)
+        case unableToAddCaptureOutput(AVCaptureOutput)
+    }
+
+    public struct Config {
+
+        public var videoDeviceInput: AVCaptureDeviceInput?
+        public var audioDeviceInput: AVCaptureDeviceInput?
+        public var photoOutput: AVCapturePhotoOutput?
+
+        public init(videoDeviceInput: AVCaptureDeviceInput?, audioDeviceInput: AVCaptureDeviceInput?, photoOutput: AVCapturePhotoOutput?) {
+            self.videoDeviceInput = videoDeviceInput
+            self.audioDeviceInput = audioDeviceInput
+            self.photoOutput = photoOutput
+        }
+    }
+
+    public struct ConfigOptions {
+
+        public var includeAudio: Bool
+
+        public init(includeAudio: Bool) {
+            self.includeAudio = includeAudio
+        }
+    }
+
+    public struct FocusOptions {
+
+        public var focusMode: AVCaptureFocusMode
+        public var location: CGPoint
+
+        public init(focusMode: AVCaptureFocusMode, location: CGPoint) {
+            self.focusMode = focusMode
+            self.location = location
+
+        }
+    }
+
+    public struct ExposureOptions {
+
+        public var exposureMode: AVCaptureExposureMode
+        public var location: CGPoint
+
+        public init(exposureMode: AVCaptureExposureMode, location: CGPoint) {
+            self.exposureMode = exposureMode
+            self.location = location
+        }
+    }
+
+    public struct FocusSettings {
+
+        public var focusOptions: FocusOptions?
+        public var exposureOptions: ExposureOptions?
+        public var monitorSubjectAreaChange: Bool?
+
+        public init(focusOptions: FocusOptions? = nil, exposureOptions: ExposureOptions? = nil, monitorSubjectAreaChange: Bool? = nil) {
+            self.focusOptions = focusOptions
+            self.exposureOptions = exposureOptions
+            self.monitorSubjectAreaChange = monitorSubjectAreaChange
+        }
+    }
+
+    public struct CameraSettings {
+
+        public var deviceType: AVCaptureDeviceType
+        public var devicePosition: AVCaptureDevicePosition
+
+        public init(deviceType: AVCaptureDeviceType, devicePosition: AVCaptureDevicePosition) {
+            self.deviceType = deviceType
+            self.devicePosition = devicePosition
+        }
+    }
+
+    public struct CapturePhotoSettings {
+
+        public var orientation: AVCaptureVideoOrientation
+
+        public init(orientation: AVCaptureVideoOrientation) {
+            self.orientation = orientation
+        }
+    }
+
+    public enum Status {
+
+        case available
+        case unavailable
+        case requiresManualResume
+    }
+}
+
+public extension Reactive where Base: AVCaptureSession {
+
+    public func removeInput <Input: AVCaptureInput> (_ prevInput: Input?, andAttachInput nextInput: Input?) -> Single<Input?> {
+        let session = self.base
+        return Single.create { single in
+            session.beginConfiguration(); defer { session.commitConfiguration() }
+
+            let disposable = Disposables.create()
+
+            if let prevInput = prevInput {
+                session.removeInput(prevInput)
+            }
+
+            if let nextInput = nextInput {
+                if session.canAddInput(nextInput) {
+                    session.addInput(nextInput)
+                } else {
+                    single(.error(RxCamera.Error.unableToAddCaptureInput(nextInput)))
+                    return disposable
+                }
+            }
+
+            single(.success(nextInput))
+
+            return disposable
+        }.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
+    }
+
+    public func removeOutput <Output: AVCaptureOutput> (_ prevOutput: Output?, andAttachOutput nextOutput: Output?) -> Single<Output?> {
+        let session = self.base
+        return Single.create { single in
+            session.beginConfiguration(); defer { session.commitConfiguration() }
+
+            let disposable = Disposables.create()
+
+            if let prevOutput = prevOutput {
+                session.removeOutput(prevOutput)
+            }
+
+            if let nextOutput = nextOutput {
+                if session.canAddOutput(nextOutput) {
+                    session.addOutput(nextOutput)
+                } else {
+                    single(.error(RxCamera.Error.unableToAddCaptureOutput(nextOutput)))
+                    return disposable
+                }
+            }
+
+            single(.success(nextOutput))
+
+            return disposable
+        }.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
+    }
+}
+
+public extension Reactive where Base: AVCaptureDevice {
+
+    public func focus(with settings: RxCamera.FocusSettings) -> Single<RxCamera.FocusSettings> {
+        let device = self.base
+        return Single.create { single in
+            do {
+                try device.lockForConfiguration()
+                defer {
+                    device.unlockForConfiguration()
+                }
+
+                if let focusOptions = settings.focusOptions {
+                    if device.isFocusPointOfInterestSupported && device.isFocusModeSupported(focusOptions.focusMode) {
+                        device.focusMode = focusOptions.focusMode
+                        device.focusPointOfInterest = focusOptions.location
+                    }
+                }
+
+                if let exposureOptions = settings.exposureOptions {
+                    if device.isFocusPointOfInterestSupported && device.isExposureModeSupported(exposureOptions.exposureMode) {
+                        device.exposureMode = exposureOptions.exposureMode
+                        device.exposurePointOfInterest = exposureOptions.location
+                    }
+                }
+
+                if let monitorSubjectAreaChange = settings.monitorSubjectAreaChange {
+                    device.isSubjectAreaChangeMonitoringEnabled = monitorSubjectAreaChange
+                }
+
+                single(.success(settings))
+            } catch let error {
+                single(.error(error))
+            }
+
+            return Disposables.create()
+        }.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
+    }
+}
+
+private struct RxCameraUtils {
+
+    static func videoDeviceInput(from devices: Observable<[AVCaptureDevice]>, with settings: RxCamera.CameraSettings) -> Single<AVCaptureDeviceInput> {
+        return devices.take(1)
+            .asSingle()
+            .observeOn(Schedulers.session)
+            .map { devices in
+                let foundDevice =
+                    devices.filter({ $0.position == settings.devicePosition && $0.deviceType == settings.deviceType }).first ??
+                        devices.filter({ $0.position == settings.devicePosition }).first
+
+                guard let videoDevice = foundDevice else { throw RxCamera.Error.noCaptureDevicesAvailable(devices) }
+                let videoDeviceInput = try AVCaptureDeviceInput(device: videoDevice)
+                return videoDeviceInput
+            }
+            .observeOn(Schedulers.main)
+    }
+
+    static func audioDeviceInput() -> Single<AVCaptureDeviceInput> {
+        return Single.create { single in
+            let disposable = Disposables.create()
+            guard let audioDevice = AVCaptureDevice.defaultDevice(withMediaType: AVMediaTypeAudio) else {
+                single(.error(RxCamera.Error.noDeviceAvailableForMediaType(AVMediaTypeAudio)))
+                return disposable
+            }
+            do {
+                let audioDeviceInput = try AVCaptureDeviceInput(device: audioDevice)
+                single(.success(audioDeviceInput))
+            } catch let error {
+                single(.error(error))
+            }
+            return disposable
+        }.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
+    }
+
+    static func photoOutput() -> Single<AVCapturePhotoOutput> {
+        return Single.create { single in
+            let photoOutput = AVCapturePhotoOutput()
+            photoOutput.isHighResolutionCaptureEnabled = true
+            photoOutput.isLivePhotoCaptureEnabled = false
+            single(.success(photoOutput))
+            return Disposables.create()
+        }.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
+    }
+
+    private init() { }
 }
