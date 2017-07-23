@@ -15,7 +15,7 @@ struct Schedulers {
 
     static let background = ConcurrentDispatchQueueScheduler(
         queue: DispatchQueue(
-            label: "com.mattadatta.RxCam.Schedulers.sessionQueue",
+            label: "com.mattadatta.RxCam.Schedulers.backgroundQueue",
             qos: .background,
             attributes: [.concurrent],
             target: nil))
