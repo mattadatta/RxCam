@@ -42,9 +42,9 @@ public final class RxCamera {
         let isActive = self.isActive.asObservable()
 
         let deviceDiscoverySession = AVCaptureDeviceDiscoverySession(
-            deviceTypes: [.builtInWideAngleCamera, .builtInDualCamera10_2],
+            __deviceTypes: [.builtInWideAngleCamera, .builtInDualCamera10_2],
             mediaType: AVMediaTypeVideo,
-            position: .unspecified)!
+            position: .unspecified)
 
         let availableDevices = deviceDiscoverySession
             .rx.observe([AVCaptureDevice].self, "devices", options: [.initial, .new])
@@ -335,8 +335,9 @@ public final class RxCamera {
                 let photoSettings = AVCapturePhotoSettings()
                 photoSettings.flashMode = .off
                 photoSettings.isHighResolutionPhotoEnabled = true
-                if photoSettings.availablePreviewPhotoPixelFormatTypes.count > 0 {
-                    photoSettings.previewPhotoFormat = [kCVPixelBufferPixelFormatTypeKey as String : photoSettings.availablePreviewPhotoPixelFormatTypes.first!]
+                let availableFormatTypes = photoSettings.__availablePreviewPhotoPixelFormatTypes
+                if !availableFormatTypes.isEmpty {
+                    photoSettings.previewPhotoFormat = [kCVPixelBufferPixelFormatTypeKey as String : availableFormatTypes.first!]
                 }
 
                 return photoOutput.rx.takePicture(with: photoSettings)
