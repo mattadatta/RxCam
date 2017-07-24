@@ -287,6 +287,20 @@ public extension ObservableType where E == PhotoCaptureDelegate.Process {
             }
             .observeOn(Schedulers.main)
     }
+
+    public func toImage() -> Observable<UIImage> {
+        return self.toDataRepresentation().flatMap { process -> Observable<UIImage> in
+            switch process.stage {
+            case .didFinishProcessingData(let didFinishProcessingData):
+                guard let data = didFinishProcessingData.data else {
+                    return .error(didFinishProcessingData.error!)
+                }
+                return .just(UIImage(data: data)!)
+            default:
+                return .empty()
+            }
+        }
+    }
 }
 
 public extension Reactive where Base: AVCapturePhotoOutput {

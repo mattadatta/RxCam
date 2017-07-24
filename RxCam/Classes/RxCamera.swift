@@ -22,6 +22,7 @@ public final class RxCamera {
     private let isActive       = Variable<Bool>(false)
 
     // Internally managed
+    private let videoDataOutput: Observable<Result<AVCaptureVideoDataOutput>>
     private let disposeBag = DisposeBag()
 
     // Externally visible
@@ -29,6 +30,7 @@ public final class RxCamera {
     public let configResult: Observable<Result<Config>>
     public let status: Observable<Status>
     public let subjectAreaDidChange: Observable<Void>
+    public let videoDataOutputDidOutputSampleBuffer: Observable<CMSampleBuffer>
 
     public init() {
         let session = self.session
@@ -62,7 +64,7 @@ public final class RxCamera {
                     .asObservable()
                     .asResult()
             }
-            .share()
+            .shareReplayLatestWhileConnected()
 
         let audioDeviceInputResult = configOptions
             .flatMapLatest { options -> Observable<Result<AVCaptureDeviceInput?>> in
@@ -80,7 +82,7 @@ public final class RxCamera {
                     .asObservable()
                     .asResult()
             }
-            .share()
+            .shareReplayLatestWhileConnected()
 
         let photoOutputResult = configOptions
             .flatMapLatest { options in
@@ -94,7 +96,7 @@ public final class RxCamera {
                     .asObservable()
                     .asResult()
             }
-            .share()
+            .shareReplayLatestWhileConnected()
 
         let config = Observable.combineLatest(
             videoDeviceInputResult.resultingElements(),
@@ -106,7 +108,7 @@ public final class RxCamera {
                     audioDeviceInput: $1,
                     photoOutput: $2)
             })
-            .share()
+            .shareReplayLatestWhileConnected()
 
         let configErrors = Observable
             .of(
@@ -121,7 +123,31 @@ public final class RxCamera {
                 config.map({ Result<Config>.element($0) }),
                 configErrors)
             .merge()
-            .shareReplay(1)
+            .shareReplayLatestWhileConnected()
+
+        let videoDataOutput = RxCameraUtils
+            .createManagedOutput(for: session) { () -> AVCaptureVideoDataOutput in
+                let output = AVCaptureVideoDataOutput()
+                output.videoSettings = [
+                    kCVPixelBufferPixelFormatTypeKey as String: NSNumber(value: kCVPixelFormatType_32BGRA)
+                ]
+                output.alwaysDiscardsLateVideoFrames = true
+                return output
+            }
+            .asObservable()
+            .asResult()
+            .shareReplayLatestWhileConnected()
+
+        self.videoDataOutput = videoDataOutput
+
+        let videoDataOutputDidOutputSampleBuffer = videoDataOutput
+            .resultingElements()
+            .flatMapLatest { output in
+                return output.rx.delegate.didOutputSampleBuffer
+            }
+            .shareReplayLatestWhileConnected()
+
+        self.videoDataOutputDidOutputSampleBuffer = videoDataOutputDidOutputSampleBuffer
 
         let lastReportedRunning = BehaviorSubject<Bool>(value: false)
 
@@ -150,7 +176,7 @@ public final class RxCamera {
                     .rx.observe(Bool.self, "running", options: [.initial, .new])
                     .unwrap()
             }
-            .shareReplay(1)
+            .shareReplayLatestWhileConnected()
 
         let sessionRuntimeError = Observable
             .combineLatest(config, isActive, resultSelector: { $0 })
@@ -161,7 +187,7 @@ public final class RxCamera {
                     .map({ $0.userInfo?[AVCaptureSessionErrorKey] as? NSError }).unwrap()
                     .map({ AVError(_nsError: $0) })
             }
-            .share()
+            .shareReplayLatestWhileConnected()
 
         let mediaServicesResetError = sessionRuntimeError
             .map({ $0.code == .mediaServicesWereReset })
@@ -173,7 +199,7 @@ public final class RxCamera {
 
         let mediaServicesResetIsRunning = mediaServicesResetError
             .withLatestFrom(lastReportedRunning)
-            .share()
+            .shareReplayLatestWhileConnected()
 
         mediaServicesResetIsRunning
             .trueOnly().ping()
@@ -207,7 +233,7 @@ public final class RxCamera {
                     }
                     .unwrap()
             }
-            .share()
+            .shareReplayLatestWhileConnected()
 
         let sessionInUseByAnotherClient = sessionWasInterrupted
             .map({ $0 == .audioDeviceInUseByAnotherClient || $0 == .videoDeviceInUseByAnotherClient })
@@ -240,7 +266,7 @@ public final class RxCamera {
         self.status = Observable
             .of(statusNeedsManualResume, statusUnavailable, statusAvailable)
             .merge()
-            .shareReplay(1)
+            .shareReplayLatestWhileConnected()
 
         let subjectAreaDidChange = Observable
             .combineLatest(videoDeviceInputResult.optionalElements(), isActive, resultSelector: { $0 })
@@ -250,7 +276,7 @@ public final class RxCamera {
                     .rx.notification(.AVCaptureDeviceSubjectAreaDidChange, object: input.device)
                     .ping()
             }
-            .shareReplay(1)
+            .shareReplayLatestWhileConnected()
 
         subjectAreaDidChange
             .map {
@@ -316,6 +342,10 @@ public final class RxCamera {
                 return photoOutput.rx.takePicture(with: photoSettings)
             }
             .observeOn(Schedulers.main)
+    }
+
+    func recordVideo() -> Observable<CMSampleBuffer> {
+        fatalError()
     }
 }
 
@@ -552,6 +582,29 @@ private struct RxCameraUtils {
             photoOutput.isLivePhotoCaptureEnabled = false
             single(.success(photoOutput))
             return Disposables.create()
+        }.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
+    }
+
+    static func createManagedOutput <Output: AVCaptureOutput> (for session: AVCaptureSession, createOutput: @escaping () -> Output) -> Observable<Output> {
+        return Observable.create { observer in
+            session.beginConfiguration(); defer { session.commitConfiguration() }
+
+            let output = createOutput()
+            let didAdd: Bool
+            if session.canAddOutput(output) {
+                session.addOutput(output)
+                didAdd = true
+                observer.onNext(output)
+            } else {
+                didAdd = false
+                observer.onError(RxCamera.Error.unableToAddCaptureOutput(output))
+            }
+
+            return Disposables.create {
+                guard didAdd else { return }
+                session.beginConfiguration(); defer { session.commitConfiguration() }
+                session.removeOutput(output)
+            }
         }.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
     }
 

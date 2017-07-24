@@ -11,9 +11,9 @@ import RxSwiftExt
 
 // Courtesy of: http://stackoverflow.com/a/37329460
 // Allows us to reliably get the screen orientation in an application or application extension.
-extension UIScreen {
+public extension UIScreen {
 
-    var orientation: UIInterfaceOrientation {
+    public var orientation: UIInterfaceOrientation {
         let point = coordinateSpace.convert(CGPoint.zero, to: self.fixedCoordinateSpace)
         if point == .zero {
             return .portrait
@@ -29,9 +29,9 @@ extension UIScreen {
     }
 }
 
-extension UIInterfaceOrientation {
+public extension UIInterfaceOrientation {
 
-    var videoOrientation: AVCaptureVideoOrientation? {
+    public var videoOrientation: AVCaptureVideoOrientation? {
         switch self {
         case .portrait:
             return .portrait
@@ -43,6 +43,21 @@ extension UIInterfaceOrientation {
             return .landscapeRight
         default:
             return nil
+        }
+    }
+    
+    public var deviceOrientation: UIDeviceOrientation {
+        switch self {
+        case .portrait:
+            return .portrait
+        case .portraitUpsideDown:
+            return .portraitUpsideDown
+        case .landscapeLeft:
+            return .landscapeRight
+        case .landscapeRight:
+            return .landscapeLeft
+        case .unknown:
+            return .unknown
         }
     }
 }
