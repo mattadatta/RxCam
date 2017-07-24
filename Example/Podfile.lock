@@ -2,16 +2,16 @@ PODS:
   - Nimble (7.0.1)
   - Quick (1.1.0)
   - RxCam (0.1.0):
-    - RxCocoa (= 3.5.0)
-    - RxGesture (= 1.0.1)
-    - RxSwift (= 3.5.0)
-    - RxSwiftExt (= 2.5.1)
-  - RxCocoa (3.5.0):
-    - RxSwift (~> 3.4)
+    - RxCocoa (~> 3.6)
+    - RxGesture (~> 1.0)
+    - RxSwift (~> 3.6)
+    - RxSwiftExt (~> 2.5)
+  - RxCocoa (3.6.1):
+    - RxSwift (~> 3.6)
   - RxGesture (1.0.1):
     - RxCocoa (~> 3.4)
     - RxSwift (~> 3.4)
-  - RxSwift (3.5.0)
+  - RxSwift (3.6.1)
   - RxSwiftExt (2.5.1):
     - RxSwiftExt/Core (= 2.5.1)
   - RxSwiftExt/Core (2.5.1):
@@ -29,10 +29,10 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   Nimble: 657d000e11df8aebe27cdaf9d244de7f30ed87f7
   Quick: dafc587e21eed9f4cab3249b9f9015b0b7a7f71d
-  RxCam: 509e42d6e31e52e6c4bc89b9e4d6896004e9d83f
-  RxCocoa: a0a09f45d0e5b48ecb6a4a7b4b4c89c88d3f633f
+  RxCam: 4b61b2df9563f576d3952f6d99d1099c90a974a6
+  RxCocoa: 84a08739ab186248c7f31ce4ee92d6f8a947d690
   RxGesture: 1f770b247c69e8133fb8f4ef263571efd0ae91a1
-  RxSwift: 18ee9d78b45edb3b0b7e79916b47a116e6dbc842
+  RxSwift: f9de85ea20cd2f7716ee5409fc13523dc638e4e4
   RxSwiftExt: ec25c6df68d15ad6fe326792d60452b52e83d606
 
 PODFILE CHECKSUM: 4d32508bce239344d69d82ba9b264493682904e4
