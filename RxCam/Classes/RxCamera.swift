@@ -128,9 +128,6 @@ public final class RxCamera {
         let videoDataOutput = RxCameraUtils
             .createManagedOutput(for: session) { () -> AVCaptureVideoDataOutput in
                 let output = AVCaptureVideoDataOutput()
-                output.videoSettings = [
-                    kCVPixelBufferPixelFormatTypeKey as String: NSNumber(value: kCVPixelFormatType_32BGRA)
-                ]
                 output.alwaysDiscardsLateVideoFrames = true
                 return output
             }
