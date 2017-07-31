@@ -63,3 +63,21 @@ public extension Reactive where Base: AVCaptureVideoDataOutput {
         return SampleBufferDelegateProxy.installForwardDelegate(delegate, retainDelegate: false, onProxyForObject: self.base)
     }
 }
+
+public extension UIImage {
+
+    convenience init?(sampleBuffer: CMSampleBuffer) {
+        guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
+            return nil
+        }
+
+        let ciImage = CIImage(cvImageBuffer: imageBuffer)
+        let ciContext = CIContext()
+
+        guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent) else {
+            return nil
+        }
+
+        self.init(cgImage: cgImage, scale: 1, orientation: .right)
+    }
+}

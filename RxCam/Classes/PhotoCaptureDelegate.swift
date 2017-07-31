@@ -289,17 +289,22 @@ public extension ObservableType where E == PhotoCaptureDelegate.Process {
     }
 
     public func toImage() -> Observable<UIImage> {
-        return self.toDataRepresentation().flatMap { process -> Observable<UIImage> in
-            switch process.stage {
-            case .didFinishProcessingData(let didFinishProcessingData):
-                guard let data = didFinishProcessingData.data else {
-                    return .error(didFinishProcessingData.error!)
+        return self
+            .toDataRepresentation()
+            .flatMap { process -> Observable<UIImage> in
+                switch process.stage {
+                case .didFinishProcessingData(let didFinishProcessingData):
+                    guard let data = didFinishProcessingData.data else {
+                        return .error(didFinishProcessingData.error!)
+                    }
+                    let dataProvider = CGDataProvider(data: data as CFData)!
+                    let cgImage = CGImage(jpegDataProviderSource: dataProvider, decode: nil, shouldInterpolate: true, intent: .defaultIntent)!
+                    let image = UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
+                    return .just(image)
+                default:
+                    return .empty()
                 }
-                return .just(UIImage(data: data)!)
-            default:
-                return .empty()
             }
-        }
     }
 }
 
