@@ -125,8 +125,8 @@ public final class RxCamera {
             .merge()
             .shareReplayLatestWhileConnected()
 
-        let videoDataOutput = RxCameraUtils
-            .createManagedOutput(for: session) { () -> AVCaptureVideoDataOutput in
+        let videoDataOutput = session
+            .rx.createManagedOutput { () -> AVCaptureVideoDataOutput in
                 let output = AVCaptureVideoDataOutput()
                 output.alwaysDiscardsLateVideoFrames = true
                 return output
@@ -584,7 +584,13 @@ private struct RxCameraUtils {
         }.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
     }
 
-    static func createManagedOutput <Output: AVCaptureOutput> (for session: AVCaptureSession, createOutput: @escaping () -> Output) -> Observable<Output> {
+    private init() { }
+}
+
+public extension Reactive where Base: AVCaptureSession {
+
+    func createManagedOutput <Output: AVCaptureOutput> (createOutput: @escaping () -> Output) -> Observable<Output> {
+        let session = self.base
         return Observable.create { observer in
             session.beginConfiguration(); defer { session.commitConfiguration() }
 
@@ -606,6 +612,4 @@ private struct RxCameraUtils {
             }
         }.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
     }
-
-    private init() { }
 }
