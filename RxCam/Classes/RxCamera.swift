@@ -42,9 +42,9 @@ public final class RxCamera {
         let isActive = self.isActive.asObservable()
 
         let deviceDiscoverySession = AVCaptureDeviceDiscoverySession(
-            __deviceTypes: [.builtInWideAngleCamera, .builtInDualCamera10_2],
+            deviceTypes: [.builtInWideAngleCamera, .builtInDualCamera10_2],
             mediaType: AVMediaTypeVideo,
-            position: .unspecified)
+            position: .unspecified)!
 
         let availableDevices = deviceDiscoverySession
             .rx.observe([AVCaptureDevice].self, "devices", options: [.initial, .new])
