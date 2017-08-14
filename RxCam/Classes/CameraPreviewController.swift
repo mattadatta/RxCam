@@ -65,9 +65,11 @@ public final class CameraPreviewController: UIViewController {
         })
     }
 
-    public func takePicture() -> Observable<PhotoCaptureDelegate.Process> {
+    public func takePicture(flashMode: AVCaptureFlashMode = .off) -> Observable<PhotoCaptureDelegate.Process> {
         guard let connection = self.previewView.videoPreviewLayer.connection else { return .empty() }
-        return self.camera.takePicture(with: RxCamera.CapturePhotoSettings(orientation: connection.videoOrientation))
+        return self.camera.takePicture(with: RxCamera.CapturePhotoSettings(
+            orientation: connection.videoOrientation,
+            flashMode: flashMode))
     }
 
     public func focus(withViewLocation location: CGPoint) {
