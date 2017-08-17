@@ -19,6 +19,10 @@ public final class CameraPreviewController: UIViewController {
         return self.view as! PreviewView
     }
 
+    public var previewLayer: AVCaptureVideoPreviewLayer {
+        return self.previewView.videoPreviewLayer
+    }
+
     public override func loadView() {
         self.view = PreviewView()
     }
@@ -67,9 +71,10 @@ public final class CameraPreviewController: UIViewController {
 
     public func takePicture(flashMode: AVCaptureFlashMode = .off) -> Observable<PhotoCaptureDelegate.Process> {
         guard let connection = self.previewView.videoPreviewLayer.connection else { return .empty() }
-        return self.camera.takePicture(with: RxCamera.CapturePhotoSettings(
-            orientation: connection.videoOrientation,
-            flashMode: flashMode))
+        return self.camera.takePicture(
+            with: RxCamera.CapturePhotoSettings(
+                orientation: connection.videoOrientation,
+                flashMode: flashMode))
     }
 
     public func focus(withViewLocation location: CGPoint) {
@@ -87,6 +92,26 @@ public final class CameraPreviewController: UIViewController {
             monitorSubjectAreaChange: true)
 
         self.camera.focus(with: focusSettings)
+    }
+
+    public func cropImageToPreviewBounds(_ image: UIImage) -> UIImage {
+        let previewLayer = self.previewLayer
+        let outputRect = previewLayer.metadataOutputRectOfInterest(for: previewLayer.bounds)
+        let cgImage = image.cgImage!
+        let width = CGFloat(cgImage.width)
+        let height = CGFloat(cgImage.height)
+        let cropRect = CGRect(
+            x: outputRect.origin.x * width,
+            y: outputRect.origin.y * height,
+            width: outputRect.size.width * width,
+            height: outputRect.size.height * height)
+
+        let croppedImage = UIImage(
+            cgImage: cgImage.cropping(to: cropRect)!,
+            scale: 1,
+            orientation: image.imageOrientation)
+
+        return croppedImage
     }
 }
 

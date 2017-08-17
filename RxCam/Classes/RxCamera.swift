@@ -319,10 +319,6 @@ public final class RxCamera {
             }
             .observeOn(Schedulers.main)
     }
-
-    func recordVideo() -> Observable<CMSampleBuffer> {
-        fatalError()
-    }
 }
 
 public extension RxCamera {
