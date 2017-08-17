@@ -22,7 +22,6 @@ public final class RxCamera {
     private let isActive       = Variable<Bool>(false)
 
     // Internally managed
-    private let videoDataOutput: Observable<Result<AVCaptureVideoDataOutput>>
     private let disposeBag = DisposeBag()
 
     // Externally visible
@@ -30,7 +29,6 @@ public final class RxCamera {
     public let configResult: Observable<Result<Config>>
     public let status: Observable<Status>
     public let subjectAreaDidChange: Observable<Void>
-    public let videoDataOutputDidOutputSampleBuffer: Observable<CMSampleBuffer>
 
     public init() {
         let session = self.session
@@ -124,27 +122,6 @@ public final class RxCamera {
                 configErrors)
             .merge()
             .shareReplayLatestWhileConnected()
-
-        let videoDataOutput = session
-            .rx.createManagedOutput { () -> AVCaptureVideoDataOutput in
-                let output = AVCaptureVideoDataOutput()
-                output.alwaysDiscardsLateVideoFrames = true
-                return output
-            }
-            .asObservable()
-            .asResult()
-            .shareReplayLatestWhileConnected()
-
-        self.videoDataOutput = videoDataOutput
-
-        let videoDataOutputDidOutputSampleBuffer = videoDataOutput
-            .resultingElements()
-            .flatMapLatest { output in
-                return output.rx.delegate.didOutputSampleBuffer
-            }
-            .shareReplayLatestWhileConnected()
-
-        self.videoDataOutputDidOutputSampleBuffer = videoDataOutputDidOutputSampleBuffer
 
         let lastReportedRunning = BehaviorSubject<Bool>(value: false)
 
@@ -330,7 +307,7 @@ public final class RxCamera {
                 }
 
                 let photoSettings = AVCapturePhotoSettings()
-                photoSettings.flashMode = .off
+                photoSettings.flashMode = settings.flashMode
                 photoSettings.isHighResolutionPhotoEnabled = true
                 if let formatType = photoSettings.__availablePreviewPhotoPixelFormatTypes.first {
                     photoSettings.previewPhotoFormat = [
@@ -341,10 +318,6 @@ public final class RxCamera {
                 return photoOutput.rx.takePicture(with: photoSettings)
             }
             .observeOn(Schedulers.main)
-    }
-
-    func recordVideo() -> Observable<CMSampleBuffer> {
-        fatalError()
     }
 }
 
@@ -431,9 +404,11 @@ public extension RxCamera {
     public struct CapturePhotoSettings {
 
         public var orientation: AVCaptureVideoOrientation
+        public var flashMode: AVCaptureFlashMode
 
-        public init(orientation: AVCaptureVideoOrientation) {
+        public init(orientation: AVCaptureVideoOrientation, flashMode: AVCaptureFlashMode) {
             self.orientation = orientation
+            self.flashMode = flashMode
         }
     }
 
@@ -589,7 +564,7 @@ private struct RxCameraUtils {
 
 public extension Reactive where Base: AVCaptureSession {
 
-    func createManagedOutput <Output: AVCaptureOutput> (createOutput: @escaping () -> Output) -> Observable<Output> {
+    func addManagedOutput <Output: AVCaptureOutput> (createOutput: @escaping () -> Output) -> Observable<Output> {
         let session = self.base
         return Observable.create { observer in
             session.beginConfiguration(); defer { session.commitConfiguration() }
@@ -611,5 +586,9 @@ public extension Reactive where Base: AVCaptureSession {
                 session.removeOutput(output)
             }
         }.subscribeOn(Schedulers.session).observeOn(Schedulers.main)
+    }
+
+    func addManagedOutput <Output: AVCaptureOutput> (output: Output) -> Observable<Output> {
+        return self.addManagedOutput(createOutput: { output })
     }
 }

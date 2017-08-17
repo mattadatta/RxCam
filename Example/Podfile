@@ -11,8 +11,8 @@ target 'RxCam_Example' do
   target 'RxCam_Tests' do
     inherit! :search_paths
 
-    pod 'Quick',  '~> 1.1.0'
-    pod 'Nimble', '~> 7.0.1'
+    pod 'Quick',  '1.1.0'
+    pod 'Nimble', '7.0.1'
   end
 end
 
