@@ -39,10 +39,10 @@ public final class RxCamera {
         let focusSettings = self.focusSettings.asObservable()
         let isActive = self.isActive.asObservable()
 
-        let deviceDiscoverySession = AVCaptureDeviceDiscoverySession(
+        let deviceDiscoverySession = AVCaptureDevice.DiscoverySession(
             deviceTypes: [.builtInWideAngleCamera, .builtInDualCamera10_2],
-            mediaType: AVMediaTypeVideo,
-            position: .unspecified)!
+            mediaType: .video,
+            position: .unspecified)
 
         let availableDevices = deviceDiscoverySession
             .rx.observe([AVCaptureDevice].self, "devices", options: [.initial, .new])
@@ -50,7 +50,7 @@ public final class RxCamera {
             .shareReplayLatestWhileConnected()
 
         let videoDeviceInputResult = Observable
-            .combineLatest(configOptions, cameraSettings, resultSelector: { $0 })
+            .combineLatest(configOptions, cameraSettings)
             .flatMapLatest { options, settings in
                 return RxCameraUtils.videoDeviceInput(from: availableDevices, with: settings)
                     .asObservable()
@@ -143,7 +143,7 @@ public final class RxCamera {
             .disposed(by: self.disposeBag)
 
         self.isRunning = Observable
-            .combineLatest(config, isActive, resultSelector: { $0 })
+            .combineLatest(config, isActive)
             .flatMapLatest { config, isActive -> Observable<Bool> in
                 guard isActive else { return .empty() }
                 return session
@@ -153,7 +153,7 @@ public final class RxCamera {
             .shareReplayLatestWhileConnected()
 
         let sessionRuntimeError = Observable
-            .combineLatest(config, isActive, resultSelector: { $0 })
+            .combineLatest(config, isActive)
             .flatMapLatest { config, isActive -> Observable<AVError> in
                 guard isActive else { return .empty() }
                 return nc
@@ -190,16 +190,16 @@ public final class RxCamera {
             .falseOnly().not()
 
         let sessionWasInterrupted = Observable
-            .combineLatest(config, isActive, resultSelector: { $0 })
-            .flatMapLatest { config, isActive -> Observable<AVCaptureSessionInterruptionReason> in
+            .combineLatest(config, isActive)
+            .flatMapLatest { config, isActive -> Observable<AVCaptureSession.InterruptionReason> in
                 guard isActive else { return .empty() }
                 return nc
                     .rx.notification(.AVCaptureSessionWasInterrupted, object: session)
-                    .map { notification -> AVCaptureSessionInterruptionReason? in
+                    .map { notification -> AVCaptureSession.InterruptionReason? in
                         guard
                             let reasonValue = notification.userInfo?[AVCaptureSessionInterruptionReasonKey] as AnyObject?,
                             let reasonIntegerValue = reasonValue.integerValue,
-                            let reason = AVCaptureSessionInterruptionReason(rawValue: reasonIntegerValue) else
+                            let reason = AVCaptureSession.InterruptionReason(rawValue: reasonIntegerValue) else
                         {
                             return nil
                         }
@@ -228,7 +228,7 @@ public final class RxCamera {
             .mapTo(Status.unavailable)
 
         let sessionInterruptionEnded = Observable
-            .combineLatest(config, isActive, resultSelector: { $0 })
+            .combineLatest(config, isActive)
             .flatMapLatest { config, isActive -> Observable<Notification> in
                 guard isActive else { return .empty() }
                 return nc.rx.notification(.AVCaptureSessionInterruptionEnded, object: session)
@@ -243,7 +243,7 @@ public final class RxCamera {
             .shareReplayLatestWhileConnected()
 
         let subjectAreaDidChange = Observable
-            .combineLatest(videoDeviceInputResult.optionalElements(), isActive, resultSelector: { $0 })
+            .combineLatest(videoDeviceInputResult.optionalElements(), isActive)
             .flatMapLatest { input, isActive -> Observable<Void> in
                 guard let input = (input ?? nil), isActive else { return .empty() }
                 return nc
@@ -265,7 +265,7 @@ public final class RxCamera {
         self.subjectAreaDidChange = subjectAreaDidChange
 
         focusSettings
-            .withLatestFrom(videoDeviceInputResult.optionalElements(), resultSelector: { $0 })
+            .withLatestFrom(videoDeviceInputResult.optionalElements(), resultSelector: { ($0, $1) })
             .subscribe(onNext: { settings, input in
                 guard let input = (input ?? nil) else { return }
                 _ = input.device.rx.focus(with: settings).subscribe()
@@ -297,12 +297,11 @@ public final class RxCamera {
         return Observable
             .zip(
                 Observable.just(settings),
-                self.configResult.map({ $0.element?.photoOutput }),
-                resultSelector: { $0 })
+                self.configResult.map({ $0.element?.photoOutput }))
             .observeOn(Schedulers.session)
             .flatMapLatest { settings, output -> Observable<PhotoCaptureDelegate.Process> in
                 guard let photoOutput = output else { return .empty() }
-                if let connection = photoOutput.connection(withMediaType: AVMediaTypeVideo) {
+                if let connection = photoOutput.connection(with: .video) {
                     connection.videoOrientation = settings.orientation
                 }
 
@@ -327,7 +326,7 @@ public extension RxCamera {
 
         case accessNotGranted
         case noCaptureDevicesAvailable([AVCaptureDevice])
-        case noDeviceAvailableForMediaType(String)
+        case noDeviceAvailableForMediaType(AVMediaType)
         case unableToAddCaptureInput(AVCaptureInput)
         case unableToAddCaptureOutput(AVCaptureOutput)
     }
@@ -356,10 +355,10 @@ public extension RxCamera {
 
     public struct FocusOptions {
 
-        public var focusMode: AVCaptureFocusMode
+        public var focusMode: AVCaptureDevice.FocusMode
         public var location: CGPoint
 
-        public init(focusMode: AVCaptureFocusMode, location: CGPoint) {
+        public init(focusMode: AVCaptureDevice.FocusMode, location: CGPoint) {
             self.focusMode = focusMode
             self.location = location
 
@@ -368,10 +367,10 @@ public extension RxCamera {
 
     public struct ExposureOptions {
 
-        public var exposureMode: AVCaptureExposureMode
+        public var exposureMode: AVCaptureDevice.ExposureMode
         public var location: CGPoint
 
-        public init(exposureMode: AVCaptureExposureMode, location: CGPoint) {
+        public init(exposureMode: AVCaptureDevice.ExposureMode, location: CGPoint) {
             self.exposureMode = exposureMode
             self.location = location
         }
@@ -392,10 +391,10 @@ public extension RxCamera {
 
     public struct CameraSettings {
 
-        public var deviceType: AVCaptureDeviceType
-        public var devicePosition: AVCaptureDevicePosition
+        public var deviceType: AVCaptureDevice.DeviceType
+        public var devicePosition: AVCaptureDevice.Position
 
-        public init(deviceType: AVCaptureDeviceType, devicePosition: AVCaptureDevicePosition) {
+        public init(deviceType: AVCaptureDevice.DeviceType, devicePosition: AVCaptureDevice.Position) {
             self.deviceType = deviceType
             self.devicePosition = devicePosition
         }
@@ -404,9 +403,9 @@ public extension RxCamera {
     public struct CapturePhotoSettings {
 
         public var orientation: AVCaptureVideoOrientation
-        public var flashMode: AVCaptureFlashMode
+        public var flashMode: AVCaptureDevice.FlashMode
 
-        public init(orientation: AVCaptureVideoOrientation, flashMode: AVCaptureFlashMode) {
+        public init(orientation: AVCaptureVideoOrientation, flashMode: AVCaptureDevice.FlashMode) {
             self.orientation = orientation
             self.flashMode = flashMode
         }
@@ -535,8 +534,8 @@ private struct RxCameraUtils {
     static func audioDeviceInput() -> Single<AVCaptureDeviceInput> {
         return Single.create { single in
             let disposable = Disposables.create()
-            guard let audioDevice = AVCaptureDevice.defaultDevice(withMediaType: AVMediaTypeAudio) else {
-                single(.error(RxCamera.Error.noDeviceAvailableForMediaType(AVMediaTypeAudio)))
+            guard let audioDevice = AVCaptureDevice.default(for: .audio) else {
+                single(.error(RxCamera.Error.noDeviceAvailableForMediaType(.audio)))
                 return disposable
             }
             do {

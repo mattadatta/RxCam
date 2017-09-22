@@ -114,12 +114,12 @@ public class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
         super.init()
     }
 
-    public func capture(_ captureOutput: AVCapturePhotoOutput, willBeginCaptureForResolvedSettings resolvedSettings: AVCaptureResolvedPhotoSettings) {
+    public func photoOutput(_ captureOutput: AVCapturePhotoOutput, willBeginCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings) {
         let process = Process(output: captureOutput, settings: resolvedSettings, stage: .willBeginCapture)
         self._process.onNext(process)
     }
 
-    public func capture(_ captureOutput: AVCapturePhotoOutput, willCapturePhotoForResolvedSettings resolvedSettings: AVCaptureResolvedPhotoSettings) {
+    public func photoOutput(_ captureOutput: AVCapturePhotoOutput, willCapturePhotoFor resolvedSettings: AVCaptureResolvedPhotoSettings) {
         let process = Process(
             output: captureOutput,
             settings: resolvedSettings,
@@ -127,7 +127,7 @@ public class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
         self._process.onNext(process)
     }
 
-    public func capture(_ captureOutput: AVCapturePhotoOutput, didCapturePhotoForResolvedSettings resolvedSettings: AVCaptureResolvedPhotoSettings) {
+    public func photoOutput(_ captureOutput: AVCapturePhotoOutput, didCapturePhotoFor resolvedSettings: AVCaptureResolvedPhotoSettings) {
         let process = Process(
             output: captureOutput,
             settings: resolvedSettings,
@@ -135,7 +135,7 @@ public class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
         self._process.onNext(process)
     }
 
-    public func capture(_ captureOutput: AVCapturePhotoOutput, didFinishRecordingLivePhotoMovieForEventualFileAt outputFileURL: URL, resolvedSettings: AVCaptureResolvedPhotoSettings) {
+    public func photoOutput(_ captureOutput: AVCapturePhotoOutput, didFinishRecordingLivePhotoMovieForEventualFileAt outputFileURL: URL, resolvedSettings: AVCaptureResolvedPhotoSettings) {
         let didFinishRecordingLivePhoto = DidFinishRecordingLivePhoto(eventualFileAtURL: outputFileURL)
         let process = Process(
             output: captureOutput,
@@ -144,7 +144,7 @@ public class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
         self._process.onNext(process)
     }
 
-    public func capture(_ captureOutput: AVCapturePhotoOutput, didFinishProcessingLivePhotoToMovieFileAt outputFileURL: URL, duration: CMTime, photoDisplay photoDisplayTime: CMTime, resolvedSettings: AVCaptureResolvedPhotoSettings, error: Swift.Error?) {
+    public func photoOutput(_ captureOutput: AVCapturePhotoOutput, didFinishProcessingLivePhotoToMovieFileAt outputFileURL: URL, duration: CMTime, photoDisplayTime: CMTime, resolvedSettings: AVCaptureResolvedPhotoSettings, error: Swift.Error?) {
         let didFinishProcessingLivePhoto = DidFinishProcessingLivePhoto(
             outputFileURL: outputFileURL,
             duration: duration,
@@ -157,7 +157,7 @@ public class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
         self._process.onNext(process)
     }
 
-    public func capture(_ captureOutput: AVCapturePhotoOutput, didFinishCaptureForResolvedSettings resolvedSettings: AVCaptureResolvedPhotoSettings, error: Swift.Error?) {
+    public func photoOutput(_ captureOutput: AVCapturePhotoOutput, didFinishCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings, error: Swift.Error?) {
         let didFinishCapture = DidFinishCapture(error: error)
         let process = Process(
             output: captureOutput,

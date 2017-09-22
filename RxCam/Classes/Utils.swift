@@ -62,9 +62,9 @@ public extension UIInterfaceOrientation {
     }
 }
 
-public extension AVCaptureDeviceType {
+public extension AVCaptureDevice.DeviceType {
 
-    public static var builtInDualCamera10_2: AVCaptureDeviceType {
+    public static var builtInDualCamera10_2: AVCaptureDevice.DeviceType {
         if #available(iOS 10.2, *) {
             return .builtInDualCamera
         } else {

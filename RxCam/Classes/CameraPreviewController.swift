@@ -30,7 +30,7 @@ public final class CameraPreviewController: UIViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
         self.previewView.session = self.camera.session
-        self.previewView.videoPreviewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill
+        self.previewView.videoPreviewLayer.videoGravity = .resizeAspectFill
 
         self.previewView
             .rx.tapGesture().when(.recognized)
@@ -44,7 +44,7 @@ public final class CameraPreviewController: UIViewController {
             .configResult
             .resultingElements().ping()
             .subscribe(onNext: { [unowned self] in
-                self.previewView.videoPreviewLayer.connection.videoOrientation = UIScreen.main.orientation.videoOrientation ?? .portrait
+                self.previewView.videoPreviewLayer.connection?.videoOrientation = UIScreen.main.orientation.videoOrientation ?? .portrait
             })
             .disposed(by: self.disposeBag)
     }
@@ -69,7 +69,7 @@ public final class CameraPreviewController: UIViewController {
         })
     }
 
-    public func takePicture(flashMode: AVCaptureFlashMode = .off) -> Observable<PhotoCaptureDelegate.Process> {
+    public func takePicture(flashMode: AVCaptureDevice.FlashMode = .off) -> Observable<PhotoCaptureDelegate.Process> {
         guard let connection = self.previewView.videoPreviewLayer.connection else { return .empty() }
         return self.camera.takePicture(
             with: RxCamera.CapturePhotoSettings(
@@ -79,8 +79,8 @@ public final class CameraPreviewController: UIViewController {
 
     public func focus(withViewLocation location: CGPoint) {
         let devicePoint = self.previewView.videoPreviewLayer
-            .captureDevicePointOfInterest(
-                for: location)
+            .captureDevicePointConverted(
+                fromLayerPoint: location)
 
         let focusSettings = RxCamera.FocusSettings(
             focusOptions: RxCamera.FocusOptions(
@@ -96,7 +96,7 @@ public final class CameraPreviewController: UIViewController {
 
     public func cropImageToPreviewBounds(_ image: UIImage) -> UIImage {
         let previewLayer = self.previewLayer
-        let outputRect = previewLayer.metadataOutputRectOfInterest(for: previewLayer.bounds)
+        let outputRect = previewLayer.metadataOutputRectConverted(fromLayerRect: previewLayer.bounds)
         let cgImage = image.cgImage!
         let width = CGFloat(cgImage.width)
         let height = CGFloat(cgImage.height)

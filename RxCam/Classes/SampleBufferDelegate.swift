@@ -37,9 +37,9 @@ public final class SampleBufferDelegateProxy: DelegateProxy, DelegateProxyType, 
         return self._didOutputSampleBuffer
     }
 
-    public func captureOutput(_ captureOutput: AVCaptureOutput!, didOutputSampleBuffer sampleBuffer: CMSampleBuffer!, from connection: AVCaptureConnection!) {
+    public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         self._didOutputSampleBuffer.onNext(sampleBuffer)
-        self.forwardToDelegate?.captureOutput?(captureOutput, didOutputSampleBuffer: sampleBuffer, from: connection)
+        self.forwardToDelegate?.captureOutput?(output, didOutput: sampleBuffer, from: connection)
     }
 
     private let _didDropSampleBuffer = PublishSubject<CMSampleBuffer>()
@@ -47,9 +47,9 @@ public final class SampleBufferDelegateProxy: DelegateProxy, DelegateProxyType, 
         return self._didDropSampleBuffer
     }
 
-    public func captureOutput(_ captureOutput: AVCaptureOutput!, didDrop sampleBuffer: CMSampleBuffer!, from connection: AVCaptureConnection!) {
+    public func captureOutput(_ output: AVCaptureOutput, didDrop sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         self._didDropSampleBuffer.onNext(sampleBuffer)
-        self.forwardToDelegate?.captureOutput?(captureOutput, didDrop: sampleBuffer, from: connection)
+        self.forwardToDelegate?.captureOutput?(output, didDrop: sampleBuffer, from: connection)
     }
 }
 
