@@ -308,7 +308,7 @@ public final class RxCamera {
 
                 let photoSettings = AVCapturePhotoSettings()
                 photoSettings.flashMode = settings.flashMode
-                photoSettings.isHighResolutionPhotoEnabled = true
+                photoSettings.isHighResolutionPhotoEnabled = false
                 if let formatType = photoSettings.__availablePreviewPhotoPixelFormatTypes.first {
                     photoSettings.previewPhotoFormat = [
                         kCVPixelBufferPixelFormatTypeKey as String : formatType
