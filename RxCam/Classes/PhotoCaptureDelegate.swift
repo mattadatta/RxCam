@@ -114,53 +114,53 @@ public class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
         super.init()
     }
 
-    public func photoOutput(_ captureOutput: AVCapturePhotoOutput, willBeginCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings) {
-        let process = Process(output: captureOutput, settings: resolvedSettings, stage: .willBeginCapture)
+    public func photoOutput(_ output: AVCapturePhotoOutput, willBeginCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings) {
+        let process = Process(output: output, settings: resolvedSettings, stage: .willBeginCapture)
         self._process.onNext(process)
     }
 
-    public func photoOutput(_ captureOutput: AVCapturePhotoOutput, willCapturePhotoFor resolvedSettings: AVCaptureResolvedPhotoSettings) {
+    public func photoOutput(_ output: AVCapturePhotoOutput, willCapturePhotoFor resolvedSettings: AVCaptureResolvedPhotoSettings) {
         let process = Process(
-            output: captureOutput,
+            output: output,
             settings: resolvedSettings,
             stage: .willCapturePhoto)
         self._process.onNext(process)
     }
 
-    public func photoOutput(_ captureOutput: AVCapturePhotoOutput, didCapturePhotoFor resolvedSettings: AVCaptureResolvedPhotoSettings) {
+    public func photoOutput(_ output: AVCapturePhotoOutput, didCapturePhotoFor resolvedSettings: AVCaptureResolvedPhotoSettings) {
         let process = Process(
-            output: captureOutput,
+            output: output,
             settings: resolvedSettings,
             stage: .didCapturePhoto)
         self._process.onNext(process)
     }
 
-    public func photoOutput(_ captureOutput: AVCapturePhotoOutput, didFinishRecordingLivePhotoMovieForEventualFileAt outputFileURL: URL, resolvedSettings: AVCaptureResolvedPhotoSettings) {
+    public func photoOutput(_ output: AVCapturePhotoOutput, didFinishRecordingLivePhotoMovieForEventualFileAt outputFileURL: URL, resolvedSettings: AVCaptureResolvedPhotoSettings) {
         let didFinishRecordingLivePhoto = DidFinishRecordingLivePhoto(eventualFileAtURL: outputFileURL)
         let process = Process(
-            output: captureOutput,
+            output: output,
             settings: resolvedSettings,
             stage: .didFinishRecordingLivePhoto(didFinishRecordingLivePhoto))
         self._process.onNext(process)
     }
 
-    public func photoOutput(_ captureOutput: AVCapturePhotoOutput, didFinishProcessingLivePhotoToMovieFileAt outputFileURL: URL, duration: CMTime, photoDisplayTime: CMTime, resolvedSettings: AVCaptureResolvedPhotoSettings, error: Swift.Error?) {
+    public func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingLivePhotoToMovieFileAt outputFileURL: URL, duration: CMTime, photoDisplayTime: CMTime, resolvedSettings: AVCaptureResolvedPhotoSettings, error: Swift.Error?) {
         let didFinishProcessingLivePhoto = DidFinishProcessingLivePhoto(
             outputFileURL: outputFileURL,
             duration: duration,
             photoDisplayTime: photoDisplayTime,
             error: error)
         let process = Process(
-            output: captureOutput,
+            output: output,
             settings: resolvedSettings,
             stage: .didFinishProcessingLivePhoto(didFinishProcessingLivePhoto))
         self._process.onNext(process)
     }
 
-    public func photoOutput(_ captureOutput: AVCapturePhotoOutput, didFinishCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings, error: Swift.Error?) {
+    public func photoOutput(_ output: AVCapturePhotoOutput, didFinishCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings, error: Swift.Error?) {
         let didFinishCapture = DidFinishCapture(error: error)
         let process = Process(
-            output: captureOutput,
+            output: output,
             settings: resolvedSettings,
             stage: .didFinishCapture(didFinishCapture))
         self._process.onNext(process)
@@ -181,27 +181,27 @@ final class PhotoCaptureDelagate10: PhotoCaptureDelegate {
         super.init()
     }
 
-    func capture(_ captureOutput: AVCapturePhotoOutput, didFinishProcessingPhotoSampleBuffer photoSampleBuffer: CMSampleBuffer?, previewPhotoSampleBuffer: CMSampleBuffer?, resolvedSettings: AVCaptureResolvedPhotoSettings, bracketSettings: AVCaptureBracketedStillImageSettings?, error: Swift.Error?) {
+    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photoSampleBuffer: CMSampleBuffer?, previewPhoto previewPhotoSampleBuffer: CMSampleBuffer?, resolvedSettings: AVCaptureResolvedPhotoSettings, bracketSettings: AVCaptureBracketedStillImageSettings?, error: Swift.Error?) {
         let didFinishProcessingPhoto = DidFinishProcessingPhoto(
             sampleBuffer: photoSampleBuffer,
             previewSampleBuffer: previewPhotoSampleBuffer,
             bracketSettings: bracketSettings,
             error: error)
         let process = Process(
-            output: captureOutput,
+            output: output,
             settings: resolvedSettings,
             stage: .didFinishProcessingPhoto(didFinishProcessingPhoto))
         self._process.onNext(process)
     }
 
-    func capture(_ captureOutput: AVCapturePhotoOutput, didFinishProcessingRawPhotoSampleBuffer rawSampleBuffer: CMSampleBuffer?, previewPhotoSampleBuffer: CMSampleBuffer?, resolvedSettings: AVCaptureResolvedPhotoSettings, bracketSettings: AVCaptureBracketedStillImageSettings?, error: Swift.Error?) {
+    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingRawPhoto rawSampleBuffer: CMSampleBuffer?, previewPhoto previewPhotoSampleBuffer: CMSampleBuffer?, resolvedSettings: AVCaptureResolvedPhotoSettings, bracketSettings: AVCaptureBracketedStillImageSettings?, error: Swift.Error?) {
         let didFinishProcessingPhoto = DidFinishProcessingPhoto(
             sampleBuffer: rawSampleBuffer,
             previewSampleBuffer: previewPhotoSampleBuffer,
             bracketSettings: bracketSettings,
             error: error)
         let process = Process(
-            output: captureOutput,
+            output: output,
             settings: resolvedSettings,
             stage: .didFinishProcessingRawPhoto(didFinishProcessingPhoto))
         self._process.onNext(process)
