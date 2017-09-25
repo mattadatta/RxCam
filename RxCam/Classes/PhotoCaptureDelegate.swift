@@ -288,7 +288,7 @@ public extension ObservableType where E == PhotoCaptureDelegate.Process {
             .observeOn(Schedulers.main)
     }
 
-    public func toImage() -> Observable<UIImage> {
+    public func toImage(devicePosition: AVCaptureDevice.Position, deviceOrientation: UIDeviceOrientation) -> Observable<UIImage> {
         return self
             .toDataRepresentation()
             .flatMap { process -> Observable<UIImage> in
@@ -297,9 +297,31 @@ public extension ObservableType where E == PhotoCaptureDelegate.Process {
                     guard let data = didFinishProcessingData.data else {
                         return .error(didFinishProcessingData.error!)
                     }
-                    let dataProvider = CGDataProvider(data: data as CFData)!
-                    let cgImage = CGImage(jpegDataProviderSource: dataProvider, decode: nil, shouldInterpolate: true, intent: .defaultIntent)!
-                    let image = UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
+
+                    let desiredImageOrientation: UIImageOrientation? = {
+                        guard devicePosition == .front else { return nil }
+                        switch deviceOrientation {
+                        case .landscapeLeft:
+                            return .downMirrored
+                        case .landscapeRight:
+                            return .upMirrored
+                        case .portrait:
+                            return .leftMirrored
+                        case .portraitUpsideDown:
+                            return .rightMirrored
+                        default:
+                            return nil
+                        }
+                    }()
+
+                    let originalImage = UIImage(data: data)!
+                    let image: UIImage
+                    if let imageOrientation = desiredImageOrientation {
+                        image = UIImage(cgImage: originalImage.cgImage!, scale: 1, orientation: imageOrientation)
+                    } else {
+                        image = originalImage
+                    }
+                    
                     return .just(image)
                 default:
                     return .empty()

@@ -73,7 +73,7 @@ public final class CameraPreviewController: UIViewController {
         guard let connection = self.previewView.videoPreviewLayer.connection else { return .empty() }
         return self.camera.takePicture(
             with: RxCamera.CapturePhotoSettings(
-                orientation: connection.videoOrientation,
+                videoOrientation: connection.videoOrientation,
                 flashMode: flashMode))
     }
 

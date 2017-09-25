@@ -302,7 +302,7 @@ public final class RxCamera {
             .flatMapLatest { settings, output -> Observable<PhotoCaptureDelegate.Process> in
                 guard let photoOutput = output else { return .empty() }
                 if let connection = photoOutput.connection(with: .video) {
-                    connection.videoOrientation = settings.orientation
+                    connection.videoOrientation = settings.videoOrientation
                 }
 
                 let photoSettings = AVCapturePhotoSettings()
@@ -402,11 +402,11 @@ public extension RxCamera {
 
     public struct CapturePhotoSettings {
 
-        public var orientation: AVCaptureVideoOrientation
+        public var videoOrientation: AVCaptureVideoOrientation
         public var flashMode: AVCaptureDevice.FlashMode
 
-        public init(orientation: AVCaptureVideoOrientation, flashMode: AVCaptureDevice.FlashMode) {
-            self.orientation = orientation
+        public init(videoOrientation: AVCaptureVideoOrientation, flashMode: AVCaptureDevice.FlashMode) {
+            self.videoOrientation = videoOrientation
             self.flashMode = flashMode
         }
     }
