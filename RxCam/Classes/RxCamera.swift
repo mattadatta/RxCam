@@ -297,16 +297,21 @@ public final class RxCamera {
         return Observable
             .zip(
                 Observable.just(settings),
-                self.configResult.map({ $0.element?.photoOutput }))
+                self.configResult.map({ $0.element }))
             .observeOn(Schedulers.session)
-            .flatMapLatest { settings, output -> Observable<PhotoCaptureDelegate.Process> in
-                guard let photoOutput = output else { return .empty() }
+            .flatMapLatest { settings, config -> Observable<PhotoCaptureDelegate.Process> in
+                guard
+                    let config = config,
+                    let videoDeviceInput = config.videoDeviceInput,
+                    let photoOutput = config.photoOutput
+                    else { return .empty() }
+                
                 if let connection = photoOutput.connection(with: .video) {
                     connection.videoOrientation = settings.videoOrientation
                 }
 
                 let photoSettings = AVCapturePhotoSettings()
-                photoSettings.flashMode = settings.flashMode
+                photoSettings.flashMode = videoDeviceInput.device.isFlashAvailable ? settings.flashMode : .off
                 photoSettings.isHighResolutionPhotoEnabled = false
                 if let formatType = photoSettings.__availablePreviewPhotoPixelFormatTypes.first {
                     photoSettings.previewPhotoFormat = [
