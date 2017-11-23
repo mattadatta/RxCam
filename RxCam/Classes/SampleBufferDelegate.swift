@@ -10,26 +10,35 @@ import RxSwift
 import RxCocoa
 import RxSwiftExt
 
-public final class SampleBufferDelegateProxy: DelegateProxy, DelegateProxyType, AVCaptureVideoDataOutputSampleBufferDelegate {
+public final class SampleBufferDelegateProxy
+    : DelegateProxy<AVCaptureVideoDataOutput, AVCaptureVideoDataOutputSampleBufferDelegate>
+    , DelegateProxyType
+    , AVCaptureVideoDataOutputSampleBufferDelegate {
 
     public static let bufferQueue = DispatchQueue(label: "com.mattadatta.RxCam.SampleBufferDelegate.bufferQueue", qos: .utility)
 
-    public static func currentDelegateFor(_ object: AnyObject) -> AnyObject? {
-        let captureOutput = object as! AVCaptureVideoDataOutput
-        return captureOutput.sampleBufferDelegate
+    public static func registerKnownImplementations() {
+        self.register(make: { SampleBufferDelegateProxy(parentObject: $0) })
     }
 
-    public static func setCurrentDelegate(_ delegate: AnyObject?, toObject object: AnyObject) {
-        let captureOutput = object as! AVCaptureVideoDataOutput
-        if let delegate = delegate as? AVCaptureVideoDataOutputSampleBufferDelegate {
-            captureOutput.setSampleBufferDelegate(delegate, queue: self.bufferQueue)
+    public static func currentDelegate(for object: AVCaptureVideoDataOutput) -> AVCaptureVideoDataOutputSampleBufferDelegate? {
+        return object.sampleBufferDelegate
+    }
+
+    public static func setCurrentDelegate(_ delegate: AVCaptureVideoDataOutputSampleBufferDelegate?, to object: AVCaptureVideoDataOutput) {
+        if let delegate = delegate {
+            object.setSampleBufferDelegate(delegate, queue: self.bufferQueue)
         } else {
-            captureOutput.setSampleBufferDelegate(nil, queue: nil)
+            object.setSampleBufferDelegate(nil, queue: nil)
         }
     }
 
+    public init(parentObject: ParentObject) {
+        super.init(parentObject: parentObject, delegateProxy: SampleBufferDelegateProxy.self)
+    }
+
     private var forwardToDelegate: AVCaptureVideoDataOutputSampleBufferDelegate? {
-        return self.forwardToDelegate() as? AVCaptureVideoDataOutputSampleBufferDelegate
+        return self.forwardToDelegate()
     }
 
     private let _didOutputSampleBuffer = PublishSubject<CMSampleBuffer>()
@@ -56,28 +65,10 @@ public final class SampleBufferDelegateProxy: DelegateProxy, DelegateProxyType, 
 public extension Reactive where Base: AVCaptureVideoDataOutput {
 
     public var delegate: SampleBufferDelegateProxy {
-        return SampleBufferDelegateProxy.proxyForObject(self.base)
+        return SampleBufferDelegateProxy.proxy(for: self.base)
     }
 
     public func setDelegate(_ delegate: AVCaptureVideoDataOutputSampleBufferDelegate) -> Disposable {
         return SampleBufferDelegateProxy.installForwardDelegate(delegate, retainDelegate: false, onProxyForObject: self.base)
-    }
-}
-
-public extension UIImage {
-
-    convenience init?(sampleBuffer: CMSampleBuffer) {
-        guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-            return nil
-        }
-
-        let ciImage = CIImage(cvImageBuffer: imageBuffer)
-        let ciContext = CIContext()
-
-        guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent) else {
-            return nil
-        }
-
-        self.init(cgImage: cgImage, scale: 1, orientation: .right)
     }
 }

@@ -12,12 +12,12 @@ TODO: Add long description of the pod here.
   s.author           = { 'Matthew Brown' => 'me.matt.brown@gmail.com' }
   s.source           = { :git => 'https://github.com/mattadatta/RxCam.git', :tag => "v/#{s.version}" }
 
-  s.ios.deployment_target = '10.0'
+  s.ios.deployment_target = '11.0'
 
   s.source_files = 'RxCam/Classes/**/*'
 
-  s.dependency 'RxSwift',     '~> 3.6'
-  s.dependency 'RxCocoa',     '~> 3.6'
-  s.dependency 'RxSwiftExt',  '~> 2.5'
-  s.dependency 'RxGesture',   '~> 1.0'
+  s.dependency 'RxSwift',     '~> 4.0'
+  s.dependency 'RxCocoa',     '~> 4.0'
+  s.dependency 'RxSwiftExt',  '~> 3.0'
+  s.dependency 'RxGesture',   '~> 1.2'
 end
