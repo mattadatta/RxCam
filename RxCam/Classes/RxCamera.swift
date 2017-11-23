@@ -47,7 +47,7 @@ public final class RxCamera {
         let availableDevices = deviceDiscoverySession
             .rx.observe([AVCaptureDevice].self, "devices", options: [.initial, .new])
             .unwrap()
-            .shareReplayLatestWhileConnected()
+            .share(replay: 1)
 
         let videoDeviceInputResult = Observable
             .combineLatest(configOptions, cameraSettings)
@@ -62,7 +62,7 @@ public final class RxCamera {
                     .asObservable()
                     .asResult()
             }
-            .shareReplayLatestWhileConnected()
+            .share(replay: 1)
 
         let audioDeviceInputResult = configOptions
             .flatMapLatest { options -> Observable<Result<AVCaptureDeviceInput?>> in
@@ -80,7 +80,7 @@ public final class RxCamera {
                     .asObservable()
                     .asResult()
             }
-            .shareReplayLatestWhileConnected()
+            .share(replay: 1)
 
         let photoOutputResult = configOptions
             .flatMapLatest { options in
@@ -94,7 +94,7 @@ public final class RxCamera {
                     .asObservable()
                     .asResult()
             }
-            .shareReplayLatestWhileConnected()
+            .share(replay: 1)
 
         let config = Observable.combineLatest(
             videoDeviceInputResult.resultingElements(),
@@ -106,7 +106,7 @@ public final class RxCamera {
                     audioDeviceInput: $1,
                     photoOutput: $2)
             })
-            .shareReplayLatestWhileConnected()
+            .share(replay: 1)
 
         let configErrors = Observable
             .of(
@@ -121,7 +121,7 @@ public final class RxCamera {
                 config.map({ Result<Config>.element($0) }),
                 configErrors)
             .merge()
-            .shareReplayLatestWhileConnected()
+            .share(replay: 1)
 
         let lastReportedRunning = BehaviorSubject<Bool>(value: false)
 
@@ -150,7 +150,7 @@ public final class RxCamera {
                     .rx.observe(Bool.self, "running", options: [.initial, .new])
                     .unwrap()
             }
-            .shareReplayLatestWhileConnected()
+            .share(replay: 1)
 
         let sessionRuntimeError = Observable
             .combineLatest(config, isActive)
@@ -161,7 +161,7 @@ public final class RxCamera {
                     .map({ $0.userInfo?[AVCaptureSessionErrorKey] as? NSError }).unwrap()
                     .map({ AVError(_nsError: $0) })
             }
-            .shareReplayLatestWhileConnected()
+            .share(replay: 1)
 
         let mediaServicesResetError = sessionRuntimeError
             .map({ $0.code == .mediaServicesWereReset })
@@ -173,7 +173,7 @@ public final class RxCamera {
 
         let mediaServicesResetIsRunning = mediaServicesResetError
             .withLatestFrom(lastReportedRunning)
-            .shareReplayLatestWhileConnected()
+            .share(replay: 1)
 
         mediaServicesResetIsRunning
             .trueOnly().ping()
@@ -207,7 +207,7 @@ public final class RxCamera {
                     }
                     .unwrap()
             }
-            .shareReplayLatestWhileConnected()
+            .share(replay: 1)
 
         let sessionInUseByAnotherClient = sessionWasInterrupted
             .map({ $0 == .audioDeviceInUseByAnotherClient || $0 == .videoDeviceInUseByAnotherClient })
@@ -220,12 +220,12 @@ public final class RxCamera {
         let statusNeedsManualResume = Observable
             .of(someSessionRuntimeError, badMediaServicesResetError, sessionInUseByAnotherClient)
             .merge()
-            .mapTo(Status.requiresManualResume)
+            .map(to: Status.requiresManualResume)
 
         let statusUnavailable = Observable
             .of(sessionCurrentlyUnavailable)
             .switchLatest()
-            .mapTo(Status.unavailable)
+            .map(to: Status.unavailable)
 
         let sessionInterruptionEnded = Observable
             .combineLatest(config, isActive)
@@ -235,12 +235,12 @@ public final class RxCamera {
         }
 
         let statusAvailable = sessionInterruptionEnded
-            .mapTo(Status.available)
+            .map(to: Status.available)
 
         self.status = Observable
             .of(statusNeedsManualResume, statusUnavailable, statusAvailable)
             .merge()
-            .shareReplayLatestWhileConnected()
+            .share(replay: 1)
 
         let subjectAreaDidChange = Observable
             .combineLatest(videoDeviceInputResult.optionalElements(), isActive)
@@ -250,7 +250,7 @@ public final class RxCamera {
                     .rx.notification(.AVCaptureDeviceSubjectAreaDidChange, object: input.device)
                     .ping()
             }
-            .shareReplayLatestWhileConnected()
+            .share(replay: 1)
 
         subjectAreaDidChange
             .map {

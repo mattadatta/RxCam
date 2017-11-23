@@ -11,7 +11,7 @@ import RxSwiftExt
 extension ObservableType {
 
     func ping() -> Observable<Void> {
-        return self.mapTo(())
+        return self.map(to: ())
     }
 }
 
