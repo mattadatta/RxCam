@@ -25,9 +25,11 @@ extension ObservableType {
 extension ObservableType {
 
     func prevAndNext() -> Observable<(E?, E)> {
-        return self
-            .scan((.none, .none), accumulator: { ($0.1, $1) })
-            .map({ ($0, $1!) })
+        let source = self
+        return Observable.deferred {
+            var prev: E? = nil
+            return source.map({ next in defer { prev = next }; return (prev, next) })
+        }
     }
 }
 
