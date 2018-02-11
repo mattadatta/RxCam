@@ -16,8 +16,8 @@ TODO: Add long description of the pod here.
 
   s.source_files = 'RxCam/Classes/**/*'
 
-  s.dependency 'RxSwift',     '~> 4.0'
-  s.dependency 'RxCocoa',     '~> 4.0'
-  s.dependency 'RxSwiftExt',  '~> 3.0'
-  s.dependency 'RxGesture',   '~> 1.2'
+  s.dependency 'RxSwift'
+  s.dependency 'RxCocoa'
+  s.dependency 'RxSwiftExt'
+  s.dependency 'RxGesture'
 end
