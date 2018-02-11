@@ -10,6 +10,13 @@ import RxSwiftExt
 
 extension ObservableType {
 
+    func map<T>(to: T) -> Observable<T> {
+        return self.map({ _ in to })
+    }
+}
+
+extension ObservableType {
+
     func ping() -> Observable<Void> {
         return self.map(to: ())
     }
