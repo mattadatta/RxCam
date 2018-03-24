@@ -16,10 +16,10 @@ public final class RxCamera {
     public let session = AVCaptureSession()
 
     // Externally configurable
-    private let configure      = PublishSubject<ConfigOptions>()
-    private let cameraSettings = PublishSubject<CameraSettings>()
-    private let focusSettings  = PublishSubject<FocusSettings>()
-    private let isActive       = Variable<Bool>(false)
+    private let configure      = PublishRelay<ConfigOptions>()
+    private let cameraSettings = PublishRelay<CameraSettings>()
+    private let focusSettings  = PublishRelay<FocusSettings>()
+    private let isActive       = BehaviorRelay<Bool>(value: false)
 
     // Internally managed
     private let disposeBag = DisposeBag()
@@ -123,7 +123,7 @@ public final class RxCamera {
             .merge()
             .share(replay: 1)
 
-        let lastReportedRunning = BehaviorSubject<Bool>(value: false)
+        let lastReportedRunning = BehaviorRelay<Bool>(value: false)
 
         Observable
             .combineLatest(config, isActive, resultSelector: { $1 })
@@ -274,23 +274,23 @@ public final class RxCamera {
     }
 
     public func configure(with options: ConfigOptions = ConfigOptions(includeAudio: true)) {
-        self.configure.onNext(options)
+        self.configure.accept(options)
     }
 
     public func start() {
-        self.isActive.value = true
+        self.isActive.accept(true)
     }
 
     public func stop() {
-        self.isActive.value = false
+        self.isActive.accept(false)
     }
 
     public func chooseCamera(with settings: CameraSettings) {
-        self.cameraSettings.onNext(settings)
+        self.cameraSettings.accept(settings)
     }
 
     public func focus(with settings: FocusSettings) {
-        self.focusSettings.onNext(settings)
+        self.focusSettings.accept(settings)
     }
 
     public func takePicture(with settings: CapturePhotoSettings) -> Observable<PhotoCaptureDelegate.Process> {
