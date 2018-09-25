@@ -298,7 +298,7 @@ public extension ObservableType where E == PhotoCaptureDelegate.Process {
                         return .error(didFinishProcessingData.error!)
                     }
 
-                    let desiredImageOrientation: UIImageOrientation? = {
+                    let desiredImageOrientation: UIImage.Orientation? = {
                         guard devicePosition == .front else { return nil }
                         switch deviceOrientation {
                         case .landscapeLeft:
